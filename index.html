@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Слайд-видео из картинок → MP4</title>
+  <title>Слайд‑видео из картинок → MP4</title>
   <style>
     body{margin:0;font-family:sans-serif;background:#0f172a;color:#e5e7eb;line-height:1.6}
     .container{max-width:900px;margin:0 auto;padding:20px}
@@ -22,16 +22,16 @@
 </head>
 <body>
   <div class="container">
-    <h1>Слайд-видео из картинок → MP4</h1>
+    <h1>Слайд‑видео из картинок → MP4</h1>
 
     <div class="panel">
       <label>Загрузите картинки:</label>
       <input id="files" type="file" accept="image/*" multiple />
       <label>Или добавьте URL картинки:</label>
       <input id="urlInput" type="text" placeholder="https://example.com/img.jpg">
-      <button id="addUrl" type="button">Добавить URL</button>
+      <button id="addUrl">Добавить URL</button>
       <label>Подписи (разделяйте пустой строкой):</label>
-      <textarea id="captions" placeholder="Заголовок 1&#10;&#10;Заголовок 2&#10;&#10;Заголовок 3"></textarea>
+      <textarea id="captions"></textarea>
     </div>
 
     <div class="panel">
@@ -39,15 +39,13 @@
       <select id="resolution">
         <option value="1280x720">1280x720</option>
         <option value="1920x1080" selected>1920x1080</option>
-        <option value="1080x1080">1080x1080</option>
-        <option value="1080x1920">1080x1920</option>
       </select>
       <label>Длительность слайда (сек):</label>
-      <input id="duration" type="number" value="3" min="1">
+      <input id="duration" type="number" value="3">
       <label>FPS:</label>
-      <input id="fps" type="number" value="30" min="1">
+      <input id="fps" type="number" value="30">
       <div class="row">
-        <button id="make" type="button">Собрать MP4</button>
+        <button id="make">Собрать MP4</button>
         <a id="download" download="slideshow.mp4">Скачать MP4</a>
       </div>
       <div id="status">Готов к работе.</div>
@@ -60,18 +58,19 @@
     </div>
   </div>
 
-  <!-- ffmpeg.wasm: однопоточное ядро — работает на GitHub Pages без COOP/COEP -->
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+  <!-- ffmpeg.wasm: подключаем правильное ядро и экспортируем глобально -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.min.js"></script>
   <script>
-    // Полифилл для старого Safari
+    // Safari polyfill
     if (typeof window.TextEncoder === 'undefined') {
       window.TextEncoder = class { encode(s){ const a=new Uint8Array(s.length); for(let i=0;i<s.length;i++) a[i]=s.charCodeAt(i); return a; } };
     }
 
-    const { createFFmpeg } = FFmpeg;
+    // Достаём createFFmpeg из глобального объекта window.FFmpeg
+    const { createFFmpeg } = window.FFmpeg;
     const ffmpeg = createFFmpeg({
       log: true,
-      corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js'
+      corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js'
     });
 
     const filesInput=document.getElementById('files');
@@ -88,87 +87,41 @@
     const ctx=canvas.getContext('2d');
     const slidesNav=document.getElementById('slidesNav');
 
-    let images=[];      // {srcType:'file'|'url', file|url, name}
-    let slides=[];      // {img, caption}
-    let currentSlide=0; // индекс текущего превью
+    let images=[];
+    let slides=[];
+    let currentSlide=0;
 
+    function setStatus(t){statusEl.textContent=t}
     window.addEventListener('error', (e)=>{ setStatus('Ошибка: '+ (e.message||e.type)); });
 
-    function splitCaptions(raw){
-      return raw.replace(/\r\n/g,'\n').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
-    }
-    function setStatus(t){ statusEl.textContent=t; }
-
-    function fitContain(imgW,imgH,boxW,boxH){
-      const r=Math.min(boxW/imgW,boxH/imgH);
-      const w=Math.round(imgW*r), h=Math.round(imgH*r);
-      const x=Math.round((boxW-w)/2), y=Math.round((boxH-h)/2);
-      return {x,y,w,h};
-    }
-
-    function drawBackground(w,h){
-      const g=ctx.createLinearGradient(0,0,w,h);
-      g.addColorStop(0,'#0b1020'); g.addColorStop(1,'#111827');
-      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
-    }
-
-    function wrapText(text,x,y,maxW,lineH){
-      const words=text.split(/\s+/); let line='', ly=y;
-      for(const word of words){
-        const test=line? line+' '+word : word;
-        if(ctx.measureText(test).width>maxW && line){
-          ctx.fillText(line,x,ly); ctx.strokeText(line,x,ly);
-          line=word; ly+=lineH;
-        } else line=test;
-      }
-      if(line){ ctx.fillText(line,x,ly); ctx.strokeText(line,x,ly); }
-    }
+    function splitCaptions(raw){return raw.replace(/\r\n/g,'\n').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean)}
 
     async function loadImage(item){
       return new Promise((res,rej)=>{
         const img=new Image();
         if(item.srcType==='url') img.crossOrigin='anonymous';
         img.onload=()=>res(img);
-        img.onerror=()=>rej(new Error('Не удалось загрузить: '+(item.name||item.url)));
+        img.onerror=()=>rej(new Error('Ошибка загрузки'));
         if(item.srcType==='file'){
           const fr=new FileReader(); fr.onload=()=>img.src=fr.result; fr.readAsDataURL(item.file);
-        } else img.src=item.url;
+        }else img.src=item.url;
       });
     }
 
     function drawSlide(slide){
       const [w,h]=resSel.value.split('x').map(Number);
       canvas.width=w; canvas.height=h;
-      drawBackground(w,h);
-
+      ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
       if(slide && slide.img){
-        const fit=fitContain(slide.img.width, slide.img.height, w, h);
-        ctx.drawImage(slide.img, fit.x, fit.y, fit.w, fit.h);
-        if(slide.caption){
-          const barH=Math.max(80,Math.round(h*0.14));
-          ctx.fillStyle='rgba(0,0,0,.5)';
-          ctx.fillRect(0,h-barH,w,barH);
-          ctx.fillStyle='#fff'; ctx.strokeStyle='rgba(0,0,0,.7)';
-          ctx.lineWidth=6; ctx.lineJoin='round';
-          ctx.font=`700 ${Math.round(h*0.05)}px system-ui, sans-serif`;
-          wrapText(slide.caption, 24, h-barH+32, w-48, Math.round(h*0.07));
-        }
-      } else if (slide && slide.caption){
-        // Только текст (если подписей больше, чем картинок)
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillStyle='#fff'; ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.lineWidth=8; ctx.lineJoin='round';
-        ctx.font=`800 ${Math.round(h*0.10)}px system-ui, sans-serif`;
-        const maxW=w*0.88;
-        const words=slide.caption.split(/\s+/); const lines=[]; let line='';
-        for(const w2 of words){ const t=line? line+' '+w2 : w2; if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=w2; } else line=t; }
-        if(line) lines.push(line);
-        const step=Math.round(h*0.12); let y=(h-step*lines.length)/2;
-        for(const ln of lines){ ctx.strokeText(ln,w/2,y); ctx.fillText(ln,w/2,y); y+=step; }
+        const fit=Math.min(w/slide.img.width,h/slide.img.height);
+        const iw=slide.img.width*fit, ih=slide.img.height*fit;
+        const x=(w-iw)/2, y=(h-ih)/2;
+        ctx.drawImage(slide.img,x,y,iw,ih);
+        if(slide.caption){ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,h-60,w,60);ctx.fillStyle='#fff';ctx.font='24px sans-serif';ctx.fillText(slide.caption,20,h-25)}
+      }else if(slide && slide.caption){
+        ctx.fillStyle='#fff';ctx.font='bold 40px sans-serif';ctx.textAlign='center';ctx.fillText(slide.caption,w/2,h/2)
       } else {
-        // Пустой слайд-заглушка
-        ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,w,h);
-        ctx.fillStyle='#94a3b8'; ctx.textAlign='center'; ctx.font='600 28px system-ui, sans-serif';
-        ctx.fillText('Добавьте картинки или подписи', w/2, h/2);
+        ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.font='20px sans-serif';ctx.fillText('Добавьте картинки или подписи',w/2,h/2);
       }
     }
 
@@ -176,9 +129,8 @@
       slidesNav.innerHTML='';
       slides.forEach((s,i)=>{
         const b=document.createElement('button');
-        b.type='button'; b.textContent=i+1;
-        if(i===currentSlide) b.style.background='#22d3ee';
-        b.onclick=()=>{ currentSlide=i; drawSlide(slides[i]); renderNav(); };
+        b.textContent=i+1; if(i===currentSlide) b.style.background='#22d3ee';
+        b.onclick=()=>{currentSlide=i; drawSlide(slides[i]); renderNav()};
         slidesNav.appendChild(b);
       });
     }
@@ -189,80 +141,58 @@
       slides=[];
       for(let i=0;i<count;i++){
         let img=null;
-        if(i<images.length){ try{ img=await loadImage(images[i]); }catch(e){ console.warn(e.message); } }
-        slides.push({img, caption:caps[i]||''});
+        if(i<images.length){try{img=await loadImage(images[i])}catch{}}
+        slides.push({img,caption:caps[i]||''});
       }
       currentSlide=0;
-      drawSlide(slides[0] || null);
+      drawSlide(slides[0]||null);
       renderNav();
       setStatus(`Слайдов: ${slides.length}`);
     }
 
-    function dataURLToBytes(dataURL){
-      const bin=atob(dataURL.split(',')[1]); const bytes=new Uint8Array(bin.length);
-      for(let j=0;j<bin.length;j++) bytes[j]=bin.charCodeAt(j);
-      return bytes;
-    }
+    filesInput.addEventListener('change',()=>{for(const f of filesInput.files) images.push({srcType:'file',file:f}); rebuildSlides()});
+    addUrlBtn.addEventListener('click',()=>{if(urlInput.value){images.push({srcType:'url',url:urlInput.value});urlInput.value='';rebuildSlides()}});
+    captionsInput.addEventListener('input',rebuildSlides);
+    resSel.addEventListener('change',()=>{if(slides.length) drawSlide(slides[currentSlide])});
+
+    function dataURLToBytes(dataURL){ const bin=atob(dataURL.split(',')[1]); const bytes=new Uint8Array(bin.length); for(let j=0;j<bin.length;j++) bytes[j]=bin.charCodeAt(j); return bytes; }
 
     async function makeVideo(){
       try{
-        if(!slides.length){ alert('Нет слайдов'); return; }
-        makeBtn.disabled=true; dl.style.display='none';
-        setStatus('Загрузка кодека…');
+        if(!slides.length){alert('Нет слайдов');return}
+        makeBtn.disabled=true; dl.style.display='none'; setStatus('Загрузка кодека…');
         if(!ffmpeg.isLoaded()) await ffmpeg.load();
 
-        // очистка FS
-        try{ ffmpeg.FS('unlink','list.txt'); }catch{}
-        try{ ffmpeg.FS('unlink','output.mp4'); }catch{}
+        try{ffmpeg.FS('unlink','list.txt')}catch{}
+        try{ffmpeg.FS('unlink','output.mp4')}catch{}
 
-        setStatus('Генерация слайдов…');
-        const fps=Math.max(1, parseInt(fpsInput.value)||30);
-        const dur=Math.max(1, parseInt(durInput.value)||3);
-
+        const fps=parseInt(fpsInput.value)||30; const dur=Math.max(1,parseInt(durInput.value)||3);
         for(let i=0;i<slides.length;i++){
           drawSlide(slides[i]);
           const bytes=dataURLToBytes(canvas.toDataURL('image/png'));
-          ffmpeg.FS('writeFile', `slide_${String(i+1).padStart(3,'0')}.png`, bytes);
+          ffmpeg.FS('writeFile',`slide${i}.png`,bytes);
         }
-
         let list='ffconcat version 1.0\n';
-        for(let i=1;i<=slides.length;i++){
-          list+=`file slide_${String(i).padStart(3,'0')}.png\n`;
-          list+=`duration ${dur}\n`;
-        }
-        list+=`file slide_${String(slides.length).padStart(3,'0')}.png\n`;
-        ffmpeg.FS('writeFile','list.txt', new TextEncoder().encode(list));
+        for(let i=0;i<slides.length;i++){list+=`file slide${i}.png\n`; list+=`duration ${dur}\n`}
+        list+=`file slide${slides.length-1}.png\n`;
+        ffmpeg.FS('writeFile','list.txt',new TextEncoder().encode(list));
 
-        setStatus('Кодирование MP4…');
-        await ffmpeg.run(
-          '-y',
-          '-f','concat','-safe','0','-i','list.txt',
-          '-r', String(fps),
-          '-c:v','libx264',
-          '-pix_fmt','yuv420p',
-          '-movflags','+faststart',
-          'output.mp4'
-        );
+        setStatus('Кодирование…');
+        await ffmpeg.run('-y','-f','concat','-safe','0','-i','list.txt','-r',String(fps),'-c:v','libx264','-pix_fmt','yuv420p','-movflags','+faststart','output.mp4');
 
         const data=ffmpeg.FS('readFile','output.mp4');
         const url=URL.createObjectURL(new Blob([data.buffer],{type:'video/mp4'}));
-        dl.href=url; dl.style.display='block';
-        setStatus('Видео собрано.');
-      }catch(err){
-        console.error(err); setStatus('Ошибка: '+(err && err.message? err.message : err));
-      }finally{
+        dl.href=url; dl.style.display='block'; setStatus('Видео собрано.');
+      } catch(err){
+        console.error(err); setStatus('Ошибка: '+(err.message||err));
+      } finally {
         makeBtn.disabled=false;
       }
     }
 
-    // Слушатели
-    filesInput.addEventListener('change',()=>{ for(const f of filesInput.files) images.push({srcType:'file',file:f,name:f.name}); rebuildSlides(); });
-    addUrlBtn.addEventListener('click',()=>{ const u=urlInput.value.trim(); if(!u) return; images.push({srcType:'url',url:u,name:u.split('/').pop()||'url'}); urlInput.value=''; rebuildSlides(); });
-    captionsInput.addEventListener('input',rebuildSlides);
-    resSel.addEventListener('change',()=>{ if(slides.length) drawSlide(slides[currentSlide]); else drawSlide(null); });
-    makeBtn.addEventListener('click', makeVideo);
+    makeBtn.addEventListener('click',makeVideo);
 
-    // Первый рендер (чтобы превью не было пустым)
+    // первый рендер
     drawSlide(null);
   </script>
 </body>
