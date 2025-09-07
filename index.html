@@ -3,138 +3,379 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Мой сайт</title>
-  <meta name="description" content="Простой стартовый сайт, размещённый на GitHub Pages" />
+  <title>Слайд‑видео из картинок → MP4 (в браузере)</title>
+  <meta name="description" content="Загрузите картинки или укажите ссылки, добавьте подписи — получите видео MP4. Работает целиком в браузере через ffmpeg.wasm." />
+  <link rel="preconnect" href="https://unpkg.com">
   <style>
-    :root{
-      --bg:#0f172a;         /* slate-900 */
-      --panel:#111827cc;    /* semi-transparent */
-      --text:#e5e7eb;       /* gray-200 */
-      --muted:#94a3b8;      /* slate-400 */
-      --brand:#22d3ee;      /* cyan-400 */
-      --brand-2:#a78bfa;    /* violet-400 */
-      --card:#111827;       /* slate-900 solid */
-      --accent:#1f2937;     /* slate-800 */
-      --ring: 0 0 0 4px #22d3ee33;
-    }
+    :root{--bg:#0f172a;--panel:#0b1222;--text:#e5e7eb;--muted:#94a3b8;--brand:#22d3ee;--violet:#a78bfa;--ring:0 0 0 4px #22d3ee33}
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text); background: radial-gradient(1200px 600px at 10% 10%, #0b1222 0%, #0f172a 40%, #0b1222 100%);
-      line-height:1.6;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;color:var(--text);background:radial-gradient(1200px 600px at 10% 10%,#0b1222 0%,#0f172a 50%,#0b1222 100%);line-height:1.6}
     a{color:var(--brand)}
-    header{
-      position:sticky; top:0; backdrop-filter:saturate(180%) blur(10px);
-      background:linear-gradient(180deg, #0b1222cc 0%, #0b122200 100%);
-      border-bottom:1px solid #0b122255;
-      z-index:10;
-    }
-    .container{max-width:1100px; margin:0 auto; padding:0 20px}
-    .nav{display:flex; align-items:center; justify-content:space-between; padding:14px 0}
-    .logo{font-weight:700; letter-spacing:.3px}
-    .badge{display:inline-block; padding:2px 10px; border-radius:999px; background:#0ea5e94d; color:#a5f3fc; font-size:12px; margin-left:8px}
-    .btn{
-      display:inline-block; padding:10px 16px; border-radius:12px; background:linear-gradient(135deg,var(--brand),var(--brand-2));
-      color:#0b1222; font-weight:700; text-decoration:none; transition:transform .15s ease, box-shadow .15s ease;
-    }
-    .btn:hover{transform:translateY(-1px); box-shadow:0 10px 24px #22d3ee26}
-    .hero{display:grid; grid-template-columns:1.1fr .9fr; gap:36px; padding:64px 0 48px}
-    .tag{display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; background:#0b1222; color:var(--muted); border:1px solid #ffffff10}
-    .title{font-size:clamp(28px,6vw,52px); line-height:1.1; margin:.4em 0}
-    .lead{color:var(--muted); font-size:18px}
-    .panel{background:linear-gradient(180deg,#0b1222,#0b1222), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="%2322d3ee"/><stop offset="1" stop-color="%23a78bfa"/></linearGradient></defs><circle cx="200" cy="140" r="60" fill="url(%23g)" opacity=".15"/><rect x="320" y="210" width="160" height="90" rx="14" fill="url(%23g)" opacity=".12"/></svg>');
-      background-blend-mode:screen; border:1px solid #ffffff12; border-radius:18px; padding:22px; box-shadow:inset 0 1px 0 #ffffff14, 0 10px 30px #00000033;
-    }
-    .code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:14px; background:#0a0f1c; border:1px solid #ffffff10; padding:14px; border-radius:12px; overflow:auto}
-    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
-    .card{background:var(--card); border:1px solid #ffffff10; border-radius:16px; padding:18px}
-    .card h3{margin:.2em 0 .2em; font-size:18px}
+    header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(10px);background:linear-gradient(180deg,#0b1222cc 0%,#0b122200 100%);border-bottom:1px solid #0b122255;z-index:10}
+    .container{max-width:1100px;margin:0 auto;padding:0 20px}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .logo{font-weight:700;letter-spacing:.3px}
+    .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 16px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--violet));color:#0b1222;font-weight:700;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px #22d3ee26}
+    main.container{padding-bottom:60px}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;padding:28px 0}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .panel{background:#0b1222;border:1px solid #ffffff15;border-radius:16px;padding:18px;box-shadow:inset 0 1px 0 #ffffff1a,0 10px 30px #00000033}
+    label{display:block;margin:.4rem 0 .2rem;color:var(--muted)}
+    input[type="text"],input[type="number"],select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #ffffff1a;background:#0a0f1c;color:var(--text);outline:none}
+    textarea{min-height:180px;resize:vertical}
+    .list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .item{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px dashed #ffffff1a;border-radius:12px}
     .muted{color:var(--muted)}
-    .footer{padding:28px 0; color:#94a3b8; border-top:1px solid #0b122255; margin-top:48px}
-    @media (max-width:900px){.hero{grid-template-columns:1fr}}
-    @media (max-width:700px){.grid{grid-template-columns:1fr}}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1 1 180px}
+    .foot{margin-top:12px;color:var(--muted);font-size:13px}
+    .progress{height:10px;background:#0a0f1c;border:1px solid #ffffff1a;border-radius:999px;overflow:hidden}
+    .bar{height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--violet))}
+    canvas{width:100%;background:#000;border-radius:12px}
+    .hint{font-size:13px;color:#9ca3af}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:2px 10px;border-radius:999px;background:#0ea5e94d;color:#a5f3fc;font-size:12px;margin-left:8px}
   </style>
 </head>
 <body>
   <header>
     <div class="container nav">
-      <div class="logo">Мой сайт<span class="badge">v0.1</span></div>
-      <nav>
-        <a class="btn" href="#contact">Связаться</a>
-      </nav>
+      <div class="logo">Слайд‑видео → MP4 <span class="pill">браузерный экспорт</span></div>
+      <a class="btn" href="#make">Собрать видео</a>
     </div>
   </header>
-
   <main class="container">
-    <section class="hero">
-      <div>
-        <div class="tag">🚀 Готов к публикации на GitHub Pages</div>
-        <h1 class="title">Стартовый шаблон сайта<br/>на чистом HTML + CSS</h1>
-        <p class="lead">Замените текст, добавьте свои разделы и картинки — и сайт готов. Файл один: <code>index.html</code>. Работает быстро и без сборщиков.</p>
-        <p style="margin:18px 0 26px">
-          <a class="btn" href="#about">Что внутри</a>
-          &nbsp;&nbsp;<a href="#" onclick="toggleTheme(); return false;">Сменить фон</a>
-        </p>
-        <div class="panel">
-          <div class="muted" style="margin-bottom:8px">Быстрый старт (скопируйте в README):</div>
-<pre class="code">1. Создайте репозиторий → загрузите этот файл как <strong>index.html</strong>.
-2. В настройках репозитория включите <strong>Pages</strong> (Source: main / root).
-3. Откройте ваш адрес: <strong>https://username.github.io</strong> или <strong>/repo</strong>.</pre>
-        </div>
-      </div>
-      <aside>
-        <div class="panel">
-          <h3 style="margin-top:0">Блок-заглушка под картинку</h3>
-          <p class="muted">Замените на реальное изображение:
-            <br><code>&lt;img src="/images/hero.jpg" alt="…"&gt;</code>
-          </p>
-          <div style="height:220px; border-radius:14px; overflow:hidden; background:linear-gradient(135deg,#0ea5e9,#a78bfa); display:grid; place-items:center;"> 
-            <div style="font-weight:700; color:#0b1222">Ваш визуал</div>
+    <div class="grid">
+      <section class="panel">
+        <h2 style="margin:0 0 10px">1) Картинки и подписи</h2>
+        <div class="row">
+          <div>
+            <label>Загрузите картинки (можно несколько):</label>
+            <input id="files" type="file" accept="image/*" multiple />
+            <div class="hint">Порядок определяется порядком выбора. Можно добавлять позже — они встанут в конец.</div>
+          </div>
+          <div>
+            <label>Добавить картинку по URL:</label>
+            <div class="row">
+              <input id="urlInput" type="text" placeholder="https://example.com/image.jpg" />
+              <button class="btn" id="addUrl" type="button">Добавить URL</button>
+            </div>
+            <div class="hint">Для URL нужен <b>CORS</b>. Если сервер его не даёт, скачайте файл и загрузите вручную.</div>
           </div>
         </div>
+
+        <div style="margin-top:16px">
+          <label for="captions">Подписи (каждая с новой строки, разделяйте <b>пустой строкой</b>):</label>
+          <textarea id="captions" placeholder="Заголовок 1&#10;&#10;Заголовок 2&#10;&#10;…"></textarea>
+          <div class="hint">Если подписей больше, чем картинок — будут созданы слайды <i>только с текстом</i> посередине.</div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <h2 style="margin:0 0 10px">2) Параметры видео</h2>
+        <div class="row">
+          <div>
+            <label>Разрешение</label>
+            <select id="resolution">
+              <option value="1920x1080" selected>1920×1080 (YouTube Full HD)</option>
+              <option value="1280x720">1280×720 (HD)</option>
+              <option value="1080x1080">1080×1080 (квадрат)</option>
+              <option value="1080x1920">1080×1920 (вертикальное)</option>
+            </select>
+          </div>
+          <div>
+            <label>Длительность слайда, сек</label>
+            <input id="duration" type="number" min="1" max="30" value="3" />
+          </div>
+          <div>
+            <label>FPS</label>
+            <input id="fps" type="number" min="1" max="60" value="30" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="make" type="button">Собрать MP4</button>
+          <a id="download" class="btn" style="display:none" download="slideshow.mp4">Скачать MP4</a>
+        </div>
+        <div class="foot" id="status">Готов к работе.</div>
+        <div class="progress" style="margin-top:8px"><div class="bar" id="bar"></div></div>
       </aside>
-    </section>
+    </div>
 
-    <section id="about" style="margin-top:10px">
-      <div class="grid">
-        <div class="card">
-          <h3>⚡ Быстро</h3>
-          <p class="muted">Один HTML-файл без зависимостей. Открывается мгновенно, идеален для GitHub Pages.</p>
-        </div>
-        <div class="card">
-          <h3>🧩 Адаптивно</h3>
-          <p class="muted">Сетка автоматически перестраивается под мобильные устройства.</p>
-        </div>
-        <div class="card">
-          <h3>🛠️ Просто изменить</h3>
-          <p class="muted">Меняйте заголовки/цвета прямо в этом файле. Комментары подскажут, что где.</p>
-        </div>
-      </div>
+    <section class="panel">
+      <h3 style="margin:0 0 8px">Превью текущего слайда</h3>
+      <canvas id="preview" width="1920" height="1080"></canvas>
+      <div class="hint">Превью показывает отрисовку слайда (фон, картинка, подпись). Итоговое видео собирается из PNG‑слайдов через ffmpeg.wasm.</div>
     </section>
-
-    <section id="contact" style="margin-top:28px">
-      <div class="panel">
-        <h2 style="margin-top:0">Контакты</h2>
-        <p class="muted">Напишите мне на почту <a href="mailto:you@example.com">you@example.com</a> или в Telegram.</p>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <div class="container">© <span id="y"></span> • Сделано на GitHub Pages</div>
-    </footer>
   </main>
 
+  <!-- ffmpeg.wasm -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
   <script>
-    // Небольшие улучшения UX
-    document.getElementById('y').textContent = new Date().getFullYear();
-    function toggleTheme(){
-      const el = document.body;
-      el.style.background = el.style.background.includes('radial')
-        ? 'linear-gradient(180deg,#0b1222,#0f172a)'
-        : 'radial-gradient(1200px 600px at 10% 10%, #0b1222 0%, #0f172a 40%, #0b1222 100%)';
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+
+    const el = (id) => document.getElementById(id);
+    const filesInput = el('files');
+    const urlInput = el('urlInput');
+    const addUrlBtn = el('addUrl');
+    const captionsInput = el('captions');
+    const resSel = el('resolution');
+    const durInput = el('duration');
+    const fpsInput = el('fps');
+    const makeBtn = el('make');
+    const dl = el('download');
+    const statusEl = el('status');
+    const bar = el('bar');
+
+    const canvas = el('preview');
+    const ctx = canvas.getContext('2d');
+
+    /** Состояние **/
+    const images = []; // {srcType:'file'|'url', file|url, name}
+
+    filesInput.addEventListener('change', async (e) => {
+      for (const file of e.target.files) {
+        images.push({ srcType: 'file', file, name: file.name });
+      }
+      if (images.length) await drawPreview(0);
+    });
+
+    addUrlBtn.addEventListener('click', async () => {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      images.push({ srcType: 'url', url, name: url.split('/').pop() || 'url-image' });
+      urlInput.value = '';
+      if (images.length) await drawPreview(images.length - 1);
+    });
+
+    resSel.addEventListener('change', () => {
+      const [w,h] = resSel.value.split('x').map(Number);
+      canvas.width = w; canvas.height = h; drawPreview(0);
+    });
+
+    captionsInput.addEventListener('input', () => drawPreview(0));
+
+    function setStatus(t){ statusEl.textContent = t; }
+    function setProgress(p){ bar.style.width = (p*100).toFixed(1)+'%'; }
+
+    function splitCaptions(raw){
+      // Разбиваем по пустым строкам (двойной Enter)
+      return raw.replace(/\r\n/g,'\n').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
     }
+
+    async function loadImageObj(item){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        if (item.srcType === 'url') img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(new Error('Не удалось загрузить изображение: '+(item.name||item.url)));
+        if (item.srcType === 'file'){
+          const fr = new FileReader();
+          fr.onload = () => img.src = fr.result;
+          fr.readAsDataURL(item.file);
+        } else {
+          img.src = item.url;
+        }
+      });
+    }
+
+    function drawBackground(w,h){
+      const g = ctx.createLinearGradient(0,0,w,h);
+      g.addColorStop(0,'#0b1020');
+      g.addColorStop(1,'#111827');
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+      // Слабый шум для YouTube-компрессии
+      const imgData = ctx.getImageData(0,0,w,h);
+      for(let i=0;i<imgData.data.length;i+=4*200){ // редкий шум
+        imgData.data[i] = imgData.data[i] + (Math.random()*8|0);
+      }
+      ctx.putImageData(imgData,0,0);
+    }
+
+    function fitContain(imgW,imgH,boxW,boxH){
+      const r = Math.min(boxW/imgW, boxH/imgH);
+      const w = Math.round(imgW*r), h = Math.round(imgH*r);
+      const x = Math.round((boxW-w)/2), y = Math.round((boxH-h)/2);
+      return {x,y,w,h};
+    }
+
+    function drawWrappedText(text, x, y, maxW, lineH){
+      const words = text.split(/\s+/);
+      let line = '', ly = y;
+      for (let i=0;i<words.length;i++){
+        const test = line ? line + ' ' + words[i] : words[i];
+        const m = ctx.measureText(test);
+        if (m.width > maxW && line){
+          ctx.fillText(line, x, ly);
+          ctx.strokeText(line, x, ly);
+          line = words[i]; ly += lineH;
+        } else {
+          line = test;
+        }
+      }
+      if (line){ ctx.fillText(line, x, ly); ctx.strokeText(line, x, ly); }
+    }
+
+    async function drawSlide({img, caption, mode}, w, h){
+      drawBackground(w,h);
+
+      if (img){
+        // Подложка под фото (soft shadow)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,.6)';
+        ctx.shadowBlur = 24; ctx.shadowOffsetY = 2;
+        const fit = fitContain(img.naturalWidth||img.width, img.naturalHeight||img.height, w, h);
+        ctx.drawImage(img, fit.x, fit.y, fit.w, fit.h);
+        ctx.restore();
+
+        // Подпись снизу
+        if (caption){
+          const pad = 32; const barH = Math.max(96, Math.round(h*0.14));
+          ctx.fillStyle = 'rgba(0,0,0,.45)';
+          ctx.fillRect(0, h - barH, w, barH);
+          ctx.font = `700 ${Math.round(h*0.05)}px system-ui, Segoe UI, Roboto, Arial`;
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = 'rgba(0,0,0,.7)';
+          ctx.lineWidth = 6; ctx.lineJoin = 'round';
+          drawWrappedText(caption, pad, h - barH + pad, w - pad*2, Math.round(h*0.07));
+        }
+      } else {
+        // Слайд только с текстом — центрируем
+        const pad = Math.round(w*0.06);
+        const maxW = w - pad*2;
+        ctx.font = `800 ${Math.round(h*0.09)}px system-ui, Segoe UI, Roboto, Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = 'rgba(0,0,0,.65)';
+        ctx.lineWidth = 10; ctx.lineJoin = 'round';
+
+        // Разбивка вручную по словам для центрирования
+        const words = (caption||'').split(/\s+/);
+        const lines = [];
+        let line='';
+        for(const wrd of words){
+          const t = line ? line+' '+wrd : wrd;
+          if (ctx.measureText(t).width > maxW){ lines.push(line); line = wrd; }
+          else line = t;
+        }
+        if (line) lines.push(line);
+        const totalH = lines.length * Math.round(h*0.11);
+        let y = (h - totalH)/2;
+        for(const ln of lines){
+          const x = w/2;
+          ctx.strokeText(ln, x, y);
+          ctx.fillText(ln, x, y);
+          y += Math.round(h*0.11);
+        }
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
+    }
+
+    async function drawPreview(idx){
+      if (!images.length && !captionsInput.value.trim()){ return; }
+      const [w,h] = resSel.value.split('x').map(Number);
+      canvas.width = w; canvas.height = h;
+      const caps = splitCaptions(captionsInput.value);
+      const item = images[idx];
+      let imgObj = null;
+      if (item){ try{ imgObj = await loadImageObj(item); }catch(e){ console.warn(e.message); } }
+      await drawSlide({img: imgObj, caption: caps[idx]||'', mode:'preview'}, w, h);
+    }
+
+    function dataURLToUint8Array(dataURL){
+      const bin = atob(dataURL.split(',')[1]);
+      const len = bin.length; const bytes = new Uint8Array(len);
+      for (let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+
+    async function buildSlides(){
+      const [w,h] = resSel.value.split('x').map(Number);
+      const caps = splitCaptions(captionsInput.value);
+      const count = Math.max(images.length, caps.length);
+      const slides = [];
+
+      for (let i=0; i<count; i++){
+        setStatus(`Рендер слайда ${i+1}/${count}…`); setProgress(i/count*0.4);
+        let imgObj = null;
+        if (i < images.length){
+          try{ imgObj = await loadImageObj(images[i]); }
+          catch(e){ console.warn(e.message); }
+        }
+        await drawSlide({img: imgObj, caption: caps[i] || ''}, w, h);
+        const dataURL = canvas.toDataURL('image/png');
+        const bytes = dataURLToUint8Array(dataURL);
+        const name = `slide_${String(i+1).padStart(3,'0')}.png`;
+        slides.push({ name, bytes });
+      }
+      return slides;
+    }
+
+    async function ensureFFmpeg(){
+      if (!ffmpeg.isLoaded()){ setStatus('Загрузка кодека (ffmpeg.wasm)…'); setProgress(0.45); await ffmpeg.load(); }
+    }
+
+    function makeConcatList(slides, dur){
+      // Конкат-демультиплексор с длительностью каждого слайда
+      // Повторяем последний файл — требование concat для корректной длительности
+      let txt = 'ffconcat version 1.0\n';
+      for(const s of slides){ txt += `file ${s.name}\n`; txt += `duration ${dur}\n`; }
+      if (slides.length){ txt += `file ${slides[slides.length-1].name}\n`; }
+      return txt;
+    }
+
+    async function assembleMP4(){
+      const dur = Math.max(1, parseInt(durInput.value||'3',10));
+      const fps = Math.max(1, parseInt(fpsInput.value||'30',10));
+
+      const slides = await buildSlides();
+      if (!slides.length){ alert('Нет ни одной картинки и ни одной подписи.'); return; }
+
+      await ensureFFmpeg();
+
+      // Чистим FS и пишем слайды
+      setStatus('Подготовка файлов…'); setProgress(0.5);
+      try{ ffmpeg.FS('unlink','list.txt'); }catch{ }
+      try{ ffmpeg.FS('unlink','output.mp4'); }catch{ }
+
+      for (let i=0;i<slides.length;i++){
+        const s = slides[i];
+        ffmpeg.FS('writeFile', s.name, s.bytes);
+      }
+      const listTxt = makeConcatList(slides, dur);
+      ffmpeg.FS('writeFile','list.txt', new TextEncoder().encode(listTxt));
+
+      setStatus('Сборка MP4… (кодирование H.264)'); setProgress(0.65);
+      // Конкат изображений с длительностями → H.264 MP4 (yuv420p для совместимости)
+      await ffmpeg.run(
+        '-y',
+        '-f','concat','-safe','0','-i','list.txt',
+        '-r', String(fps),
+        '-c:v','libx264',
+        '-pix_fmt','yuv420p',
+        '-movflags','+faststart',
+        'output.mp4'
+      );
+
+      setStatus('Готово. Формирую ссылку на загрузку…'); setProgress(0.95);
+      const data = ffmpeg.FS('readFile','output.mp4');
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+      dl.href = url; dl.style.display = 'inline-flex';
+      setStatus('Видео собрано. Можно скачивать MP4.'); setProgress(1);
+    }
+
+    makeBtn.addEventListener('click', async () => {
+      try{
+        dl.style.display='none'; setProgress(0);
+        await assembleMP4();
+      }catch(err){
+        console.error(err);
+        setStatus('Ошибка: '+ (err && err.message ? err.message : err));
+      }
+    });
   </script>
 </body>
 </html>
