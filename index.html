@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Слайд‑видео из картинок → MP4 (в браузере)</title>
-  <meta name="description" content="Загрузите картинки или укажите ссылки, добавьте подписи — получите видео MP4. Работает целиком в браузере через ffmpeg.wasm." />
+  <title>Слайд‑видео из картинок → MP4 (браузер)</title>
+  <meta name="description" content="Загрузите картинки или URL, добавьте подписи и соберите MP4 прямо в браузере. ffmpeg.wasm." />
   <link rel="preconnect" href="https://unpkg.com">
   <style>
-    :root{--bg:#0f172a;--panel:#0b1222;--text:#e5e7eb;--muted:#94a3b8;--brand:#22d3ee;--violet:#a78bfa;--ring:0 0 0 4px #22d3ee33}
+    :root{--bg:#0f172a;--panel:#0b1222;--text:#e5e7eb;--muted:#94a3b8;--brand:#22d3ee;--violet:#a78bfa}
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;color:var(--text);background:radial-gradient(1200px 600px at 10% 10%,#0b1222 0%,#0f172a 50%,#0b1222 100%);line-height:1.6}
@@ -15,9 +15,9 @@
     header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(10px);background:linear-gradient(180deg,#0b1222cc 0%,#0b122200 100%);border-bottom:1px solid #0b122255;z-index:10}
     .container{max-width:1100px;margin:0 auto;padding:0 20px}
     .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-    .logo{font-weight:700;letter-spacing:.3px}
-    .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 16px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--violet));color:#0b1222;font-weight:700;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
-    .btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px #22d3ee26}
+    .logo{font-weight:700}
+    .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 16px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--violet));color:#0b1222;font-weight:700;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease;border:0;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
     main.container{padding-bottom:60px}
     .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;padding:28px 0}
     @media (max-width:900px){.grid{grid-template-columns:1fr}}
@@ -25,24 +25,28 @@
     label{display:block;margin:.4rem 0 .2rem;color:var(--muted)}
     input[type="text"],input[type="number"],select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #ffffff1a;background:#0a0f1c;color:var(--text);outline:none}
     textarea{min-height:180px;resize:vertical}
-    .list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-    .item{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px dashed #ffffff1a;border-radius:12px}
-    .muted{color:var(--muted)}
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .row > *{flex:1 1 180px}
     .foot{margin-top:12px;color:var(--muted);font-size:13px}
     .progress{height:10px;background:#0a0f1c;border:1px solid #ffffff1a;border-radius:999px;overflow:hidden}
     .bar{height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--violet))}
-    canvas{width:100%;background:#000;border-radius:12px}
+    canvas#preview{width:100%;background:#000;border-radius:12px}
     .hint{font-size:13px;color:#9ca3af}
-    .pill{display:inline-flex;gap:6px;align-items:center;padding:2px 10px;border-radius:999px;background:#0ea5e94d;color:#a5f3fc;font-size:12px;margin-left:8px}
+    /* thumbs */
+    #thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:12px}
+    .thumb{position:relative;border:2px solid transparent;border-radius:10px;overflow:hidden;background:#020817;cursor:pointer}
+    .thumb img{display:block;width:100%;height:80px;object-fit:cover}
+    .thumb .idx{position:absolute;top:6px;left:6px;background:#000a;color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
+    .thumb.active{border-color:#22d3ee}
+    .thumb .cap{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.75));color:#fff;font-size:11px;padding:14px 6px 6px 6px;line-height:1.2;max-height:60px;overflow:hidden}
+    .pager{display:flex;gap:10px;align-items:center;margin:10px 0}
   </style>
 </head>
 <body>
   <header>
     <div class="container nav">
-      <div class="logo">Слайд‑видео → MP4 <span class="pill">браузерный экспорт</span></div>
-      <a class="btn" href="#make">Собрать видео</a>
+      <div class="logo">Слайд‑видео → MP4</div>
+      <a class="btn" href="#make">К кнопке сборки</a>
     </div>
   </header>
   <main class="container">
@@ -53,22 +57,32 @@
           <div>
             <label>Загрузите картинки (можно несколько):</label>
             <input id="files" type="file" accept="image/*" multiple />
-            <div class="hint">Порядок определяется порядком выбора. Можно добавлять позже — они встанут в конец.</div>
+            <div class="hint">Порядок — как выбраны. Добавленные позже встанут в конец.</div>
           </div>
           <div>
-            <label>Добавить картинку по URL:</label>
+            <label>Картинка по URL:</label>
             <div class="row">
               <input id="urlInput" type="text" placeholder="https://example.com/image.jpg" />
               <button class="btn" id="addUrl" type="button">Добавить URL</button>
             </div>
-            <div class="hint">Для URL нужен <b>CORS</b>. Если сервер его не даёт, скачайте файл и загрузите вручную.</div>
+            <div class="hint">Для URL нужен CORS. Если сервер его не даёт — скачайте и загрузите файл.</div>
           </div>
         </div>
 
         <div style="margin-top:16px">
-          <label for="captions">Подписи (каждая с новой строки, разделяйте <b>пустой строкой</b>):</label>
-          <textarea id="captions" placeholder="Заголовок 1&#10;&#10;Заголовок 2&#10;&#10;…"></textarea>
-          <div class="hint">Если подписей больше, чем картинок — будут созданы слайды <i>только с текстом</i> посередине.</div>
+          <label for="captions">Подписи (каждая подпись отделяется <b>пустой строкой</b>):</label>
+          <textarea id="captions" placeholder="Заголовок 1&#10;&#10;Заголовок 2&#10;&#10;Заголовок 3"></textarea>
+          <div class="hint">Если подписей больше, чем картинок — создадим слайды <i>только с текстом</i> (центр, тёмный фон, крупный шрифт).</div>
+        </div>
+
+        <div style="margin-top:16px">
+          <h3 style="margin:0 0 8px">Слайды (превью и навигация)</h3>
+          <div class="pager">
+            <button class="btn" id="prev" type="button">◀ Предыдущий</button>
+            <div class="hint" id="pos">0 / 0</div>
+            <button class="btn" id="next" type="button">Следующий ▶</button>
+          </div>
+          <div id="thumbs"></div>
         </div>
       </section>
 
@@ -103,279 +117,280 @@
     </div>
 
     <section class="panel">
-      <h3 style="margin:0 0 8px">Превью текущего слайда</h3>
+      <h3 style="margin:0 0 8px">Большое превью текущего слайда</h3>
       <canvas id="preview" width="1920" height="1080"></canvas>
-      <div class="hint">Превью показывает отрисовку слайда (фон, картинка, подпись). Итоговое видео собирается из PNG‑слайдов через ffmpeg.wasm.</div>
+      <div class="hint">Превью обновляется при добавлении картинок/подписей и при переключении слайдов.</div>
     </section>
   </main>
 
   <!-- ffmpeg.wasm -->
   <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
   <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
+  const { createFFmpeg } = FFmpeg;
+  const ffmpeg = createFFmpeg({ log: true });
 
-    const el = (id) => document.getElementById(id);
-    const filesInput = el('files');
-    const urlInput = el('urlInput');
-    const addUrlBtn = el('addUrl');
-    const captionsInput = el('captions');
-    const resSel = el('resolution');
-    const durInput = el('duration');
-    const fpsInput = el('fps');
-    const makeBtn = el('make');
-    const dl = el('download');
-    const statusEl = el('status');
-    const bar = el('bar');
+  const $ = (id) => document.getElementById(id);
+  const filesInput = $('files');
+  const urlInput = $('urlInput');
+  const addUrlBtn = $('addUrl');
+  const captionsInput = $('captions');
+  const resSel = $('resolution');
+  const durInput = $('duration');
+  const fpsInput = $('fps');
+  const makeBtn = $('make');
+  const dl = $('download');
+  const statusEl = $('status');
+  const bar = $('bar');
+  const thumbs = $('thumbs');
+  const btnPrev = $('prev');
+  const btnNext = $('next');
+  const pos = $('pos');
 
-    const canvas = el('preview');
-    const ctx = canvas.getContext('2d');
+  const canvas = $('preview');
+  const ctx = canvas.getContext('2d');
 
-    /** Состояние **/
-    const images = []; // {srcType:'file'|'url', file|url, name}
+  const state = {
+    images: [], // {srcType:'file'|'url', file|url, name}
+    captions: [],
+    index: 0,
+  };
 
-    filesInput.addEventListener('change', async (e) => {
-      for (const file of e.target.files) {
-        images.push({ srcType: 'file', file, name: file.name });
-      }
-      if (images.length) await drawPreview(0);
+  function setStatus(t){ statusEl.textContent = t; }
+  function setProgress(p){ bar.style.width = (p*100).toFixed(1)+'%'; }
+  function splitCaptions(raw){
+    return raw.replace(/\r\n/g,'\n').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+  }
+
+  function updateCaptions(){
+    state.captions = splitCaptions(captionsInput.value);
+  }
+
+  function fitContain(imgW,imgH,boxW,boxH){
+    const r = Math.min(boxW/imgW, boxH/imgH);
+    const w = Math.round(imgW*r), h = Math.round(imgH*r);
+    const x = Math.round((boxW-w)/2), y = Math.round((boxH-h)/2);
+    return {x,y,w,h};
+  }
+
+  function drawBackground(w,h){
+    const g = ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,'#0b1020');
+    g.addColorStop(1,'#111827');
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+    // немного шума для YouTube-компрессии
+    const imgData = ctx.getImageData(0,0,w,h);
+    for(let i=0;i<imgData.data.length;i+=4*200){ imgData.data[i] = imgData.data[i] + (Math.random()*8|0); }
+    ctx.putImageData(imgData,0,0);
+  }
+
+  function drawWrappedText(text, x, y, maxW, lineH){
+    const words = text.split(/\s+/);
+    let line = '', ly = y;
+    for (let i=0;i<words.length;i++){
+      const test = line ? line + ' ' + words[i] : words[i];
+      const m = ctx.measureText(test);
+      if (m.width > maxW && line){
+        ctx.fillText(line, x, ly); ctx.strokeText(line, x, ly);
+        line = words[i]; ly += lineH;
+      } else { line = test; }
+    }
+    if (line){ ctx.fillText(line, x, ly); ctx.strokeText(line, x, ly); }
+  }
+
+  function loadImageObj(item){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      if (item.srcType === 'url') img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Не удалось загрузить: '+(item.name||item.url)));
+      if (item.srcType === 'file'){
+        const fr = new FileReader();
+        fr.onload = () => img.src = fr.result;
+        fr.readAsDataURL(item.file);
+      } else { img.src = item.url; }
     });
+  }
 
-    addUrlBtn.addEventListener('click', async () => {
-      const url = urlInput.value.trim();
-      if (!url) return;
-      images.push({ srcType: 'url', url, name: url.split('/').pop() || 'url-image' });
-      urlInput.value = '';
-      if (images.length) await drawPreview(images.length - 1);
-    });
+  async function drawSlideToCtx(img, caption, w, h){
+    drawBackground(w,h);
+    if (img){
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 2;
+      const fit = fitContain(img.naturalWidth||img.width, img.naturalHeight||img.height, w, h);
+      ctx.drawImage(img, fit.x, fit.y, fit.w, fit.h);
+      ctx.restore();
 
-    resSel.addEventListener('change', () => {
-      const [w,h] = resSel.value.split('x').map(Number);
-      canvas.width = w; canvas.height = h; drawPreview(0);
-    });
-
-    captionsInput.addEventListener('input', () => drawPreview(0));
-
-    function setStatus(t){ statusEl.textContent = t; }
-    function setProgress(p){ bar.style.width = (p*100).toFixed(1)+'%'; }
-
-    function splitCaptions(raw){
-      // Разбиваем по пустым строкам (двойной Enter)
-      return raw.replace(/\r\n/g,'\n').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
-    }
-
-    async function loadImageObj(item){
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        if (item.srcType === 'url') img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = (e) => reject(new Error('Не удалось загрузить изображение: '+(item.name||item.url)));
-        if (item.srcType === 'file'){
-          const fr = new FileReader();
-          fr.onload = () => img.src = fr.result;
-          fr.readAsDataURL(item.file);
-        } else {
-          img.src = item.url;
-        }
-      });
-    }
-
-    function drawBackground(w,h){
-      const g = ctx.createLinearGradient(0,0,w,h);
-      g.addColorStop(0,'#0b1020');
-      g.addColorStop(1,'#111827');
-      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
-      // Слабый шум для YouTube-компрессии
-      const imgData = ctx.getImageData(0,0,w,h);
-      for(let i=0;i<imgData.data.length;i+=4*200){ // редкий шум
-        imgData.data[i] = imgData.data[i] + (Math.random()*8|0);
+      if (caption){
+        const pad = 32; const barH = Math.max(96, Math.round(h*0.14));
+        ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, h - barH, w, barH);
+        ctx.font = `700 ${Math.round(h*0.05)}px system-ui, Segoe UI, Roboto, Arial`;
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 6; ctx.lineJoin = 'round';
+        drawWrappedText(caption, pad, h - barH + pad, w - pad*2, Math.round(h*0.07));
       }
-      ctx.putImageData(imgData,0,0);
+    } else if (caption){
+      // слайд только с текстом (YouTube‑friendly)
+      const pad = Math.round(w*0.06);
+      const maxW = w - pad*2;
+      ctx.font = `800 ${Math.round(h*0.09)}px system-ui, Segoe UI, Roboto, Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.lineWidth = 10; ctx.lineJoin = 'round';
+      const words = caption.split(/\s+/); const lines = []; let line='';
+      for(const wrd of words){ const t = line ? line+' '+wrd : wrd; if (ctx.measureText(t).width > maxW){ lines.push(line); line = wrd; } else line = t; }
+      if (line) lines.push(line);
+      const step = Math.round(h*0.11); const totalH = lines.length * step; let y = (h - totalH)/2;
+      for(const ln of lines){ const x = w/2; ctx.strokeText(ln, x, y); ctx.fillText(ln, x, y); y += step; }
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    } else {
+      // пустой слайд
+      ctx.fillStyle = '#0a0f1c'; ctx.fillRect(0,0,w,h);
     }
+  }
 
-    function fitContain(imgW,imgH,boxW,boxH){
-      const r = Math.min(boxW/imgW, boxH/imgH);
-      const w = Math.round(imgW*r), h = Math.round(imgH*r);
-      const x = Math.round((boxW-w)/2), y = Math.round((boxH-h)/2);
-      return {x,y,w,h};
+  async function drawPreview(index){
+    const [w,h] = resSel.value.split('x').map(Number);
+    canvas.width = w; canvas.height = h;
+    const caption = state.captions[index] || '';
+    let imgObj = null;
+    if (index < state.images.length){
+      try { imgObj = await loadImageObj(state.images[index]); } catch(e){ console.warn(e.message); }
     }
+    await drawSlideToCtx(imgObj, caption, w, h);
+    pos.textContent = `${Math.min(index+1, Math.max(state.images.length, state.captions.length) || 1)} / ${Math.max(state.images.length, state.captions.length) || 1}`;
+  }
 
-    function drawWrappedText(text, x, y, maxW, lineH){
-      const words = text.split(/\s+/);
-      let line = '', ly = y;
-      for (let i=0;i<words.length;i++){
-        const test = line ? line + ' ' + words[i] : words[i];
-        const m = ctx.measureText(test);
-        if (m.width > maxW && line){
-          ctx.fillText(line, x, ly);
-          ctx.strokeText(line, x, ly);
-          line = words[i]; ly += lineH;
-        } else {
-          line = test;
-        }
-      }
-      if (line){ ctx.fillText(line, x, ly); ctx.strokeText(line, x, ly); }
+  function dataURLToUint8Array(dataURL){
+    const bin = atob(dataURL.split(',')[1]); const len = bin.length; const bytes = new Uint8Array(len);
+    for (let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i); return bytes;
+  }
+
+  async function renderThumb(index){
+    const [W,H] = [640, 360]; // offscreen для превью
+    const off = document.createElement('canvas'); off.width = W; off.height = H;
+    const c2 = off.getContext('2d');
+    const old = { fillStyle: ctx.fillStyle, font: ctx.font, strokeStyle: ctx.strokeStyle, lineWidth: ctx.lineWidth, lineJoin: ctx.lineJoin, textAlign: ctx.textAlign, textBaseline: ctx.textBaseline };
+    // временно подменим глобальный ctx ссылкой на c2 через протез
+    const realCtx = ctx; window._ctxBackup = realCtx; window._canvasBackup = canvas;
+    // переиспользуем функции, подменив контекст
+    window.canvas = off; window.ctx = c2;
+
+    let imgObj = null;
+    if (index < state.images.length){ try { imgObj = await loadImageObj(state.images[index]); } catch(e){} }
+    await drawSlideToCtx(imgObj, state.captions[index] || '', W, H);
+
+    // откат
+    window.canvas = window._canvasBackup; window.ctx = window._ctxBackup; delete window._canvasBackup; delete window._ctxBackup;
+    Object.assign(ctx, old);
+
+    const url = off.toDataURL('image/jpeg', 0.7);
+    return url;
+  }
+
+  async function renderThumbnails(){
+    const count = Math.max(state.images.length, state.captions.length);
+    thumbs.innerHTML = '';
+    if (!count){ pos.textContent = '0 / 0'; return; }
+    const urls = [];
+    for (let i=0;i<count;i++){
+      // чтобы пользователь видел отклик — добавим заглушку заранее
+      const box = document.createElement('div'); box.className = 'thumb'; box.innerHTML = `<div class="idx">${i+1}</div><div class="cap"></div>`; thumbs.appendChild(box);
+      urls.push(renderThumb(i).then(u=>({i,u})));
     }
-
-    async function drawSlide({img, caption, mode}, w, h){
-      drawBackground(w,h);
-
-      if (img){
-        // Подложка под фото (soft shadow)
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,.6)';
-        ctx.shadowBlur = 24; ctx.shadowOffsetY = 2;
-        const fit = fitContain(img.naturalWidth||img.width, img.naturalHeight||img.height, w, h);
-        ctx.drawImage(img, fit.x, fit.y, fit.w, fit.h);
-        ctx.restore();
-
-        // Подпись снизу
-        if (caption){
-          const pad = 32; const barH = Math.max(96, Math.round(h*0.14));
-          ctx.fillStyle = 'rgba(0,0,0,.45)';
-          ctx.fillRect(0, h - barH, w, barH);
-          ctx.font = `700 ${Math.round(h*0.05)}px system-ui, Segoe UI, Roboto, Arial`;
-          ctx.fillStyle = '#ffffff';
-          ctx.strokeStyle = 'rgba(0,0,0,.7)';
-          ctx.lineWidth = 6; ctx.lineJoin = 'round';
-          drawWrappedText(caption, pad, h - barH + pad, w - pad*2, Math.round(h*0.07));
-        }
-      } else {
-        // Слайд только с текстом — центрируем
-        const pad = Math.round(w*0.06);
-        const maxW = w - pad*2;
-        ctx.font = `800 ${Math.round(h*0.09)}px system-ui, Segoe UI, Roboto, Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = 'rgba(0,0,0,.65)';
-        ctx.lineWidth = 10; ctx.lineJoin = 'round';
-
-        // Разбивка вручную по словам для центрирования
-        const words = (caption||'').split(/\s+/);
-        const lines = [];
-        let line='';
-        for(const wrd of words){
-          const t = line ? line+' '+wrd : wrd;
-          if (ctx.measureText(t).width > maxW){ lines.push(line); line = wrd; }
-          else line = t;
-        }
-        if (line) lines.push(line);
-        const totalH = lines.length * Math.round(h*0.11);
-        let y = (h - totalH)/2;
-        for(const ln of lines){
-          const x = w/2;
-          ctx.strokeText(ln, x, y);
-          ctx.fillText(ln, x, y);
-          y += Math.round(h*0.11);
-        }
-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      }
+    const results = await Promise.all(urls);
+    for (const {i,u} of results){
+      const box = thumbs.children[i]; box.innerHTML = `<span class="idx">${i+1}</span><img alt="thumb ${i+1}" src="${u}"><div class="cap"></div>`;
+      const cap = state.captions[i] || '';
+      if (cap){ box.querySelector('.cap').textContent = cap; }
+      box.onclick = () => { state.index = i; highlightThumb(); drawPreview(state.index); };
     }
+    highlightThumb();
+  }
 
-    async function drawPreview(idx){
-      if (!images.length && !captionsInput.value.trim()){ return; }
-      const [w,h] = resSel.value.split('x').map(Number);
-      canvas.width = w; canvas.height = h;
-      const caps = splitCaptions(captionsInput.value);
-      const item = images[idx];
+  function highlightThumb(){
+    const nodes = thumbs.querySelectorAll('.thumb');
+    nodes.forEach((n,idx)=>{ n.classList.toggle('active', idx === state.index); });
+  }
+
+  async function buildSlidesToFS(){
+    const [w,h] = resSel.value.split('x').map(Number);
+    const count = Math.max(state.images.length, state.captions.length);
+    if (!count){ alert('Нет ни одной картинки и ни одной подписи.'); return 0; }
+
+    for (let i=0;i<count;i++){
+      setStatus(`Рендер слайда ${i+1}/${count}…`); setProgress(i/count*0.4);
+      const caption = state.captions[i] || '';
       let imgObj = null;
-      if (item){ try{ imgObj = await loadImageObj(item); }catch(e){ console.warn(e.message); } }
-      await drawSlide({img: imgObj, caption: caps[idx]||'', mode:'preview'}, w, h);
+      if (i < state.images.length){ try { imgObj = await loadImageObj(state.images[i]); } catch(e){} }
+      await drawSlideToCtx(imgObj, caption, w, h);
+      const png = canvas.toDataURL('image/png');
+      const bytes = dataURLToUint8Array(png);
+      const name = `slide_${String(i+1).padStart(3,'0')}.png`;
+      ffmpeg.FS('writeFile', name, bytes);
     }
+    return count;
+  }
 
-    function dataURLToUint8Array(dataURL){
-      const bin = atob(dataURL.split(',')[1]);
-      const len = bin.length; const bytes = new Uint8Array(len);
-      for (let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
-      return bytes;
-    }
+  function makeConcatList(count, dur){
+    let txt = 'ffconcat version 1.0\n';
+    for (let i=1;i<=count;i++){ const name = `slide_${String(i).padStart(3,'0')}.png`; txt += `file ${name}\n`; txt += `duration ${dur}\n`; }
+    if (count){ txt += `file slide_${String(count).padStart(3,'0')}.png\n`; }
+    return txt;
+  }
 
-    async function buildSlides(){
-      const [w,h] = resSel.value.split('x').map(Number);
-      const caps = splitCaptions(captionsInput.value);
-      const count = Math.max(images.length, caps.length);
-      const slides = [];
-
-      for (let i=0; i<count; i++){
-        setStatus(`Рендер слайда ${i+1}/${count}…`); setProgress(i/count*0.4);
-        let imgObj = null;
-        if (i < images.length){
-          try{ imgObj = await loadImageObj(images[i]); }
-          catch(e){ console.warn(e.message); }
-        }
-        await drawSlide({img: imgObj, caption: caps[i] || ''}, w, h);
-        const dataURL = canvas.toDataURL('image/png');
-        const bytes = dataURLToUint8Array(dataURL);
-        const name = `slide_${String(i+1).padStart(3,'0')}.png`;
-        slides.push({ name, bytes });
-      }
-      return slides;
-    }
-
-    async function ensureFFmpeg(){
-      if (!ffmpeg.isLoaded()){ setStatus('Загрузка кодека (ffmpeg.wasm)…'); setProgress(0.45); await ffmpeg.load(); }
-    }
-
-    function makeConcatList(slides, dur){
-      // Конкат-демультиплексор с длительностью каждого слайда
-      // Повторяем последний файл — требование concat для корректной длительности
-      let txt = 'ffconcat version 1.0\n';
-      for(const s of slides){ txt += `file ${s.name}\n`; txt += `duration ${dur}\n`; }
-      if (slides.length){ txt += `file ${slides[slides.length-1].name}\n`; }
-      return txt;
-    }
-
-    async function assembleMP4(){
+  async function assemble(){
+    try {
+      makeBtn.disabled = true; dl.style.display='none'; setProgress(0);
       const dur = Math.max(1, parseInt(durInput.value||'3',10));
       const fps = Math.max(1, parseInt(fpsInput.value||'30',10));
 
-      const slides = await buildSlides();
-      if (!slides.length){ alert('Нет ни одной картинки и ни одной подписи.'); return; }
+      setStatus('Загрузка кодека (ffmpeg.wasm)…'); setProgress(0.45);
+      if (!ffmpeg.isLoaded()) await ffmpeg.load();
 
-      await ensureFFmpeg();
+      // очистка
+      try{ ffmpeg.FS('unlink','list.txt'); }catch{}
+      try{ ffmpeg.FS('unlink','output.mp4'); }catch{}
 
-      // Чистим FS и пишем слайды
-      setStatus('Подготовка файлов…'); setProgress(0.5);
-      try{ ffmpeg.FS('unlink','list.txt'); }catch{ }
-      try{ ffmpeg.FS('unlink','output.mp4'); }catch{ }
+      const count = await buildSlidesToFS();
+      if (!count){ setStatus('Добавьте хотя бы один слайд.'); makeBtn.disabled = false; return; }
 
-      for (let i=0;i<slides.length;i++){
-        const s = slides[i];
-        ffmpeg.FS('writeFile', s.name, s.bytes);
-      }
-      const listTxt = makeConcatList(slides, dur);
+      const listTxt = makeConcatList(count, Math.max(1, parseInt(durInput.value||'3',10)));
       ffmpeg.FS('writeFile','list.txt', new TextEncoder().encode(listTxt));
 
-      setStatus('Сборка MP4… (кодирование H.264)'); setProgress(0.65);
-      // Конкат изображений с длительностями → H.264 MP4 (yuv420p для совместимости)
+      setStatus('Сборка MP4… (H.264)'); setProgress(0.7);
       await ffmpeg.run(
-        '-y',
-        '-f','concat','-safe','0','-i','list.txt',
-        '-r', String(fps),
-        '-c:v','libx264',
-        '-pix_fmt','yuv420p',
-        '-movflags','+faststart',
-        'output.mp4'
+        '-y', '-f','concat','-safe','0','-i','list.txt',
+        '-r', String(fps), '-c:v','libx264', '-pix_fmt','yuv420p', '-movflags','+faststart', 'output.mp4'
       );
 
-      setStatus('Готово. Формирую ссылку на загрузку…'); setProgress(0.95);
+      setStatus('Готово. Формирую ссылку…'); setProgress(0.95);
       const data = ffmpeg.FS('readFile','output.mp4');
-      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const blob = new Blob([data.buffer], { type:'video/mp4' });
       const url = URL.createObjectURL(blob);
-      dl.href = url; dl.style.display = 'inline-flex';
-      setStatus('Видео собрано. Можно скачивать MP4.'); setProgress(1);
+      dl.href = url; dl.style.display='inline-flex';
+      setStatus('Видео собрано. Можно скачивать.'); setProgress(1);
+    } catch(err){
+      console.error(err); setStatus('Ошибка: '+(err && err.message ? err.message : err));
+    } finally {
+      makeBtn.disabled = false;
     }
+  }
 
-    makeBtn.addEventListener('click', async () => {
-      try{
-        dl.style.display='none'; setProgress(0);
-        await assembleMP4();
-      }catch(err){
-        console.error(err);
-        setStatus('Ошибка: '+ (err && err.message ? err.message : err));
-      }
-    });
+  // UI events
+  filesInput.addEventListener('change', async (e) => {
+    for (const file of e.target.files) state.images.push({ srcType:'file', file, name:file.name });
+    await renderThumbnails(); state.index = 0; await drawPreview(state.index);
+  });
+  addUrlBtn.addEventListener('click', async () => {
+    const url = urlInput.value.trim(); if (!url) return; state.images.push({ srcType:'url', url, name:url.split('/').pop()||'url-image' }); urlInput.value='';
+    await renderThumbnails(); state.index = state.images.length-1; await drawPreview(state.index);
+  });
+  captionsInput.addEventListener('input', async () => { updateCaptions(); await renderThumbnails(); await drawPreview(state.index); });
+  resSel.addEventListener('change', async () => { await drawPreview(state.index); });
+  btnPrev.addEventListener('click', async () => { const count = Math.max(state.images.length, state.captions.length); if (!count) return; state.index = (state.index-1+count)%count; highlightThumb(); await drawPreview(state.index); });
+  btnNext.addEventListener('click', async () => { const count = Math.max(state.images.length, state.captions.length); if (!count) return; state.index = (state.index+1)%count; highlightThumb(); await drawPreview(state.index); });
+  makeBtn.addEventListener('click', assemble);
+
+  // init
+  updateCaptions(); renderThumbnails(); drawPreview(0);
   </script>
 </body>
 </html>
